@@ -86,5 +86,5 @@ typings/
 app/modules/config.js
 
 #jsons
-app/unfollow/unfollowed.json
-app/unfollow/toUnfollow.json
+#app/unfollow/unfollowed.json
+#app/unfollow/toUnfollow.json
