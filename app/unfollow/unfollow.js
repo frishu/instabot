@@ -5,9 +5,9 @@ const config = require(__dirname + '/../modules/config');
 (async () => {
     const browser = await puppeteer.launch({
 
-        args: ['--disable-features=site-per-process', '--lang=en-GB'],
-        //args: ['--no-sandbox', '--disable-setuid-sandbox', '--lang=en-GB'],
-        headless: false,
+        //args: ['--disable-features=site-per-process', '--lang=en-GB'],
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--lang=en-GB'],
+        headless: true,
         devtools: false,
 
     });
@@ -47,19 +47,37 @@ const config = require(__dirname + '/../modules/config');
 
     for(let nick in toUnfollow) {
 
-        await unfollow.goto('https://www.instagram.com/' + nick + '/');
+        if(unfollowed[nick] != null) {
+            unfollowed[nick] = true;
+            continue;
+        }
+
+        if(!await unfollow.goto('https://www.instagram.com/' + nick + '/')) {
+            continue;
+        }
+
         await config.insertJQuery(unfollow);
-        await unfollow.evaluate(async() => {
-        
+        let statusUnfollowed = await unfollow.evaluate(async() => {
+
+            let unfollowed = 0;
             if($("button:contains(Following)")[0]) {
                 $("button:contains(Following)")[0].click();
+                await new Promise(r => setTimeout(r, 500));
+                $("button:contains(Unfollow)")[0].click();
+                unfollowed = 1;
             }
 
+            return unfollowed;
+
         });
-        
-        unfollowed[nick] = true
+
+        unfollowed[nick] = true;
         fs.writeFileSync(__dirname + '/unfollowed.json', JSON.stringify(unfollowed, null, 2));
 
-        await new Promise(r => setTimeout(r, 58000));
+        if(statusUnfollowed === 1) {
+            await new Promise(r => setTimeout(r, 58000));
+        }
     }
+
+    process.exit();
 })();
